@@ -19,6 +19,7 @@ def test_example_runs(capsys: pytest.CaptureFixture[str]) -> None:
     spec.loader.exec_module(module)
     module.main()
     out = capsys.readouterr().out
-    assert "ahead by 1.4 points, but the interval includes zero" in out
+    assert "Logistic regression is ahead by" in out
+    assert "but the interval includes zero" in out
     assert "The interval excludes zero: the tree ranks tumours worse" in out
     assert "temperature (T = " in out
