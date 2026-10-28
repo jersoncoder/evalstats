@@ -150,16 +150,18 @@ def _sort_rows(
 
     When the scores are shared by every row (the bootstrap case) they are sorted once and only
     the weight matrix is permuted, which keeps a bootstrap at O(rows * n) after one sort.
+    The order inside a group of tied scores is irrelevant (ties are handled through the group
+    bounds), so the sort need not be stable.
     """
     s2, w2 = _rows(scores), _rows(w)
     key = -s2 if descending else s2
     if s2.shape[0] == 1:
-        order = np.argsort(key[0], kind="stable")
+        order = np.argsort(key[0])
         sorted_scores = s2[:, order]
         sorted_labels = y[order][np.newaxis, :]
         sorted_weights = w2[:, order]
     else:
-        order_rows = np.argsort(key, axis=1, kind="stable")
+        order_rows = np.argsort(key, axis=1)
         sorted_scores = np.take_along_axis(s2, order_rows, axis=1)
         sorted_labels = y[order_rows]
         sorted_weights = np.take_along_axis(np.broadcast_to(w2, s2.shape), order_rows, axis=1)
