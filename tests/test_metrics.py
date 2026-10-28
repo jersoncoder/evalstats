@@ -47,7 +47,9 @@ def _random_case(
     y[:2] = [0.0, 1.0]
     rng.shuffle(y)
     decimals = int(rng.integers(1, 4))
-    scores = np.round(np.clip(0.3 * y + 0.7 * rng.random(n), 0.0, 1.0), decimals)
+    scores = np.asarray(
+        np.round(np.clip(0.3 * y + 0.7 * rng.random(n), 0, 1), decimals), dtype=float
+    )
     # Always include a tie between a positive and a negative.
     scores[np.argmax(y == 1)] = scores[np.argmax(y == 0)]
     labels = (rng.random(n) < 0.5).astype(np.float64)

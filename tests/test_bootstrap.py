@@ -45,7 +45,7 @@ def test_jackknife_acceleration_matches_closed_form_for_the_mean() -> None:
     x = rng.exponential(size=400)
 
     def mean_statistic(counts: FloatArray) -> FloatArray:
-        return (counts @ x) / counts.sum(axis=1)
+        return np.asarray((counts @ x) / counts.sum(axis=1), dtype=np.float64)
 
     jack = bs._jackknife(mean_statistic, len(x), rng)
     d = x - x.mean()
@@ -58,7 +58,7 @@ def test_grouped_jackknife_acceleration_targets_leave_one_out() -> None:
     x = rng.exponential(size=3000)
 
     def mean_statistic(counts: FloatArray) -> FloatArray:
-        return (counts @ x) / counts.sum(axis=1)
+        return np.asarray((counts @ x) / counts.sum(axis=1), dtype=np.float64)
 
     d = x - x.mean()
     exact = np.sum(d**3) / (6 * np.sum(d**2) ** 1.5)

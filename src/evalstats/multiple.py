@@ -1,7 +1,7 @@
 """Adjusted p-values for multiple comparisons.
 
 * Holm (1979) controls the family-wise error rate (the chance of any false rejection) under any
-  dependence between the tests. It is uniformly more powerful than Bonferroni.
+  dependence between the tests. It rejects every hypothesis Bonferroni rejects, and often more.
 * Benjamini-Hochberg (1995) controls the false discovery rate (the expected share of false
   rejections among all rejections) for independent or positively dependent tests.
 

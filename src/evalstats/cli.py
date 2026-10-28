@@ -46,7 +46,7 @@ class InputError(Exception):
 def read_column(path: Path) -> tuple[list[str] | None, FloatArray]:
     """Read one value column, and the ids if the file has an ``id`` column."""
     try:
-        with path.open(newline="", encoding="utf-8") as handle:
+        with path.open(newline="", encoding="utf-8-sig") as handle:  # tolerate a BOM
             rows = [row for row in csv.reader(handle) if row and any(cell.strip() for cell in row)]
     except OSError as error:
         raise InputError(f"cannot read {path}: {error.strerror}") from error

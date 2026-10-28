@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "evalstats"
-version = "0.1.0"
+dynamic = ["version"]
 description = "Confidence intervals, paired tests, calibration and slice analysis for comparing ML models."
 readme = "README.md"
 license = "MIT"
@@ -39,6 +39,9 @@ dev = [
 
 [project.scripts]
 evalstats = "evalstats.cli:main"
+
+[tool.hatch.version]
+path = "src/evalstats/__init__.py"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/evalstats"]

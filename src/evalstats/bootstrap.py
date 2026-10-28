@@ -68,7 +68,9 @@ class BootstrapResult:
 
 
 @dataclass(frozen=True)
-class _Summary:
+class BootstrapSummary:
+    """Estimate, interval and p-value for zero returned by :func:`summarize`."""
+
     estimate: float
     ci_low: float
     ci_high: float
@@ -199,7 +201,7 @@ def summarize(
     rng: np.random.Generator,
     strata: Sequence[IntArray] | None = None,
     label: str = "statistic",
-) -> _Summary:
+) -> BootstrapSummary:
     """Bootstrap ``statistic`` and return its estimate, interval and a p-value for zero.
 
     The p-value is the smallest ``1 - confidence`` at which the reported interval would exclude
@@ -236,7 +238,7 @@ def summarize(
             w = float(ndtri(zero_level)) - bias
             if 1.0 + accel * w > 0.0:
                 zero_level = float(ndtr(w / (1.0 + accel * w) - bias))
-            return _Summary(
+            return BootstrapSummary(
                 estimate=estimate,
                 ci_low=float(low),
                 ci_high=float(high),
@@ -252,7 +254,7 @@ def summarize(
             stacklevel=3,
         )
     low, high, p_value = percentile_interval(finite, confidence)
-    return _Summary(
+    return BootstrapSummary(
         estimate=estimate,
         ci_low=low,
         ci_high=high,
