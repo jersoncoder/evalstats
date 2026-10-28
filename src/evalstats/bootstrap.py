@@ -171,8 +171,22 @@ def _rank_fraction(replicates: FloatArray, value: float) -> float:
     return (below + 0.5 * ties) / len(replicates)
 
 
-def _p_value_from_level(one_sided: float) -> float:
-    return float(min(1.0, 2.0 * min(one_sided, 1.0 - one_sided)))
+def _zero_level(finite: FloatArray) -> float:
+    """Share of replicates below zero, kept inside [1/(B+1), B/(B+1)]."""
+    count = len(finite)
+    return float(np.clip(_rank_fraction(finite, 0.0), 1 / (count + 1), count / (count + 1)))
+
+
+def _p_value_from_level(one_sided: float, count: int) -> float:
+    """Two-sided p-value from a one-sided level, never below 2/(B+1)."""
+    return max(min(1.0, 2.0 * min(one_sided, 1.0 - one_sided)), 2.0 / (count + 1))
+
+
+def percentile_interval(finite: FloatArray, confidence: float) -> tuple[float, float, float]:
+    """Percentile interval of finite replicates and the p-value for zero that inverts it."""
+    alpha = 1.0 - confidence
+    low, high = np.quantile(finite, [alpha / 2.0, 1.0 - alpha / 2.0])
+    return float(low), float(high), _p_value_from_level(_zero_level(finite), len(finite))
 
 
 def summarize(
@@ -208,38 +222,42 @@ def summarize(
             RuntimeWarning,
             stacklevel=3,
         )
-    alpha = 1.0 - confidence
-    count = len(finite)
-    zero_level = float(np.clip(_rank_fraction(finite, 0.0), 1 / (count + 1), count / (count + 1)))
-    used: CIMethod = method
     if method == "bca":
         position = _rank_fraction(finite, estimate)
-        if position in (0.0, 1.0):
-            warnings.warn(
-                f"the {label} estimate lies outside its bootstrap distribution, where BCa is "
-                "undefined; reporting a percentile interval",
-                RuntimeWarning,
-                stacklevel=3,
-            )
-            used = "percentile"
-        else:
+        if position not in (0.0, 1.0):
             bias = float(ndtri(position))
             accel = _acceleration(_jackknife(statistic, n, rng))
+            alpha = 1.0 - confidence
             z = ndtri(np.array([alpha / 2.0, 1.0 - alpha / 2.0]))
             levels = ndtr(bias + (bias + z) / (1.0 - accel * (bias + z)))
             low, high = np.quantile(finite, levels)
             # Invert the same mapping at zero for a p-value consistent with the interval.
+            zero_level = _zero_level(finite)
             w = float(ndtri(zero_level)) - bias
             if 1.0 + accel * w > 0.0:
                 zero_level = float(ndtr(w / (1.0 + accel * w) - bias))
-    if used == "percentile":
-        low, high = np.quantile(finite, [alpha / 2.0, 1.0 - alpha / 2.0])
+            return _Summary(
+                estimate=estimate,
+                ci_low=float(low),
+                ci_high=float(high),
+                method="bca",
+                p_value=_p_value_from_level(zero_level, len(finite)),
+                standard_error=float(np.std(finite, ddof=1)),
+                n_invalid=n_invalid,
+            )
+        warnings.warn(
+            f"the {label} estimate lies outside its bootstrap distribution, where BCa is "
+            "undefined; reporting a percentile interval",
+            RuntimeWarning,
+            stacklevel=3,
+        )
+    low, high, p_value = percentile_interval(finite, confidence)
     return _Summary(
         estimate=estimate,
-        ci_low=float(low),
-        ci_high=float(high),
-        method=used,
-        p_value=max(_p_value_from_level(zero_level), 2.0 / (count + 1)),
+        ci_low=low,
+        ci_high=high,
+        method="percentile",
+        p_value=p_value,
         standard_error=float(np.std(finite, ddof=1)),
         n_invalid=n_invalid,
     )
